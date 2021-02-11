@@ -1,0 +1,833 @@
+import pygame
+from random import randint, random, choice
+from time import time
+from pickle import load, dump
+import ctypes
+import os
+import sys
+import random
+
+
+def new_game():
+    file = open('store.pckl', 'wb')
+    dump(60, file)  # fps
+    file.close()
+
+
+if __name__ == "__main__":
+    new_game()
+
+pygame.font.init()
+f = open("store.pckl", "rb")
+fps = load(f)
+f.close()
+user32 = ctypes.windll.user32
+width, height = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+color_back = (0, 144, 250)
+color_text = (0, 255, 91)
+color_lev = (244, 255, 41)
+
+
+class FPScounter:
+    def __init__(self):
+        self.count = 0
+        self.start = None
+        self.fin = 0
+
+    def draw(self):
+        if self.start is None:
+            self.start = time()
+            return
+        if time() - self.start < 1:
+            self.count += 1
+        else:
+            self.fin = self.count
+            self.start = time()
+            self.count = 0
+        my_font = pygame.font.SysFont("arial", height // 30)
+        text_surface = my_font.render(f"fps: {self.fin}", False, color_lev)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (width // 8, height // 8)
+        screen.blit(text_surface, text_rect)
+
+
+class Button:
+    def __init__(self, x, y, w, h, color=color_text, text="", outline=4):
+        self.x = x
+        self.y = y
+        self.width = w
+        self.height = h
+        self.color = color
+        self.text = text
+        self.outline = outline
+        self.my_font = pygame.font.SysFont("arial", self.height // 2)
+        self.text_surface = self.my_font.render(self.text, False, self.color)
+        self.text_rect = self.text_surface.get_rect()
+        self.text_rect.center = (self.x + self.width // 2 + 1, self.y + self.height // 2 - 1)
+
+    def draw(self):
+        pygame.draw.rect(screen, self.color, [self.x, self.y, self.width, self.height], self.outline)
+        screen.blit(self.text_surface, self.text_rect)
+
+    def click(self, cords):
+        if self.x <= cords[0] <= self.x + self.width and self.y <= cords[1] <= self.y + self.height:
+            self.color = (255 - self.color[0], 255 - self.color[1], 255 - self.color[2])
+
+
+class GameSkeleton:
+    def __init__(self, alpha=2, x_pos=0, y_pos=0, color=(255, 255, 255)):
+        self.x = width // 3 * x_pos + width // 100 * alpha
+        self.y = height // 2 * y_pos + height // 100 * alpha
+        self.width = (width // 3 * (1 + x_pos) - width // 100 * alpha) - self.x
+        self.height = (height // 2 * (1 + y_pos) - height // 100 * alpha) - self.y
+        self.color = color
+        self.outline = 4
+        self.buttons = []
+        self.numb = 6
+        x_numb = y_numb = self.numb
+        self.alpha = 0
+        for x in range(x_numb):
+            for y in range(y_numb):
+                if x == 0:
+                    game_x = int(self.width // x_numb * x + self.width // 100 * (self.alpha / 1))
+                    game_width = int(self.width // x_numb * (1 + x) - self.width // 100 * (self.alpha / 2) - game_x)
+                elif x + 1 == x_numb:
+                    game_x = int(self.width // x_numb * x + self.width // 100 * (self.alpha / 2))
+                    game_width = int(self.width // x_numb * (1 + x) - self.width // 100 * (self.alpha / 1) - game_x)
+                else:
+                    game_x = int(self.width // x_numb * x + self.width // 100 * (self.alpha / 2))
+                    game_width = int(self.width // x_numb * (1 + x) - self.width // 100 * (self.alpha / 2) - game_x)
+                game_x += self.x
+                if y == 0:
+                    game_y = int(self.height // y_numb * y + self.height // 100 * (self.alpha / 1))
+                    game_height = int(self.height // y_numb * (1 + y) - self.height // 100 * (self.alpha / 2) - game_y)
+                elif y + 1 == y_numb:
+                    game_y = int(self.height // y_numb * y + self.height // 100 * (self.alpha / 2))
+                    game_height = int(self.height // y_numb * (1 + y) - self.height // 100 * (self.alpha / 1) - game_y)
+                else:
+                    game_y = int(self.height // y_numb * y + self.height // 100 * (self.alpha / 2))
+                    game_height = int(self.height // y_numb * (1 + y) - self.height // 100 * (self.alpha / 2) - game_y)
+                game_y += self.y
+                self.buttons.append(Button(game_x, game_y, game_width, game_height,
+                                           text="", outline=self.outline, color=self.color))
+
+    def init(self, x, y, this_width, this_height):
+        self.x = x
+        self.y = y
+        self.width = this_width
+        self.height = this_height
+        self.buttons = []
+        x_numb = y_numb = self.numb
+        for x in range(x_numb):
+            for y in range(y_numb):
+                if x == 0:
+                    game_x = int(self.width // x_numb * x + self.width // 100 * (self.alpha / 1))
+                    game_width = int(self.width // x_numb * (1 + x) - self.width // 100 * (self.alpha / 2) - game_x)
+                elif x + 1 == x_numb:
+                    game_x = int(self.width // x_numb * x + self.width // 100 * (self.alpha / 2))
+                    game_width = int(self.width // x_numb * (1 + x) - self.width // 100 * (self.alpha / 1) - game_x)
+                else:
+                    game_x = int(self.width // x_numb * x + self.width // 100 * (self.alpha / 2))
+                    game_width = int(self.width // x_numb * (1 + x) - self.width // 100 * (self.alpha / 2) - game_x)
+                game_x += self.x
+                if y == 0:
+                    game_y = int(self.height // y_numb * y + self.height // 100 * (self.alpha / 1))
+                    game_height = int(self.height // y_numb * (1 + y) - self.height // 100 * (self.alpha / 2) - game_y)
+                elif y + 1 == y_numb:
+                    game_y = int(self.height // y_numb * y + self.height // 100 * (self.alpha / 2))
+                    game_height = int(self.height // y_numb * (1 + y) - self.height // 100 * (self.alpha / 1) - game_y)
+                else:
+                    game_y = int(self.height // y_numb * y + self.height // 100 * (self.alpha / 2))
+                    game_height = int(self.height // y_numb * (1 + y) - self.height // 100 * (self.alpha / 2) - game_y)
+                game_y += self.y
+                self.buttons.append(Button(game_x, game_y, game_width, game_height,
+                                           text=" ", outline=self.outline, color=self.color))
+
+    def copy(self):
+        return GameSkeleton()
+
+    def draw(self):
+        for button in self.buttons:
+            button.draw()
+
+    def click(self, cords):
+        for button in self.buttons:
+            button.click(cords)
+
+
+games = [GameSkeleton()]
+
+clock = pygame.time.Clock()
+screen = pygame.display.set_mode((width, height), pygame.FULLSCREEN)
+pygame.display.set_caption("Kvody's maze")
+
+
+def my_random(numb):
+    return -numb + (numb + numb) * random()
+
+
+class Rectangle:
+    def __init__(self, color, data, outline=0):
+        self.color = color
+        self.data = data
+        self.outline = outline
+        self.background_color = list(color_back)
+        self.fill_speed = 4
+        self.max = 150
+        self.update_color = color_back
+
+    def update(self):
+        self.background_color = list(self.update_color)
+
+    def draw(self):
+        pygame.draw.rect(screen, self.background_color, self.data)
+        pygame.draw.rect(screen, self.color, self.data, self.outline)
+
+    def clicked(self, cords):
+        return (self.data[0] <= cords[0] <= self.data[0] + self.data[2] and
+                self.data[1] <= cords[1] <= self.data[1] + self.data[3])
+
+    def is_in(self, cords):
+        if (self.data[0] <= cords[0] <= self.data[0] + self.data[2] and
+                self.data[1] <= cords[1] <= self.data[1] + self.data[3]):
+            self.background_color[0] = min(self.background_color[0] + self.fill_speed, self.max)
+            self.background_color[1] = min(self.background_color[1] + self.fill_speed, self.max)
+            self.background_color[2] = min(self.background_color[2] + self.fill_speed, self.max)
+        else:
+            self.background_color[0] = max(self.background_color[0] - self.fill_speed, 0)
+            self.background_color[1] = max(self.background_color[1] - self.fill_speed, 0)
+            self.background_color[2] = max(self.background_color[2] - self.fill_speed, 0)
+
+
+screen_rect = (0, 0, width, height)
+
+
+def load_image(name, colorkey=None):
+    fullname = os.path.join(name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    return image
+
+
+class Particle(pygame.sprite.Sprite):
+    fire = [load_image("star.png")]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.gravity = 2
+
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        if not self.rect.colliderect(screen_rect):
+            self.kill()
+
+
+def create_particles(position):
+    particle_count = 10
+    numbers = range(-5, 2)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
+
+
+class ExitButton:
+    def __init__(self, color=color_text, outline=4, this_alpha=10):
+        self.color = color
+        self.outline = outline
+        self.alpha = this_alpha
+        self.x = this_alpha * 2
+        self.y = height // (this_alpha ** 2)
+        self.width = width // (2 * this_alpha) - self.x
+        self.height = height // (2 * this_alpha) - self.y
+        self.rectangle = Rectangle(self.color, (self.x, self.y, self.width, self.height),
+                                   self.outline)
+        self.fin_cords = (0, 0)
+
+    def draw(self):
+        self.rectangle.draw()
+        free_space = self.height - 2 * self.alpha
+        for i in range(2):
+            pygame.draw.line(screen, self.color, (self.x + self.alpha, self.y + self.alpha + free_space * i),
+                             (self.x + self.width - self.alpha, self.y + self.alpha + free_space * i),
+                             self.outline)
+
+    def clicked(self, cords):
+        return self.rectangle.clicked(cords)
+
+    def is_in(self, cords):
+        self.fin_cords = cords
+        self.rectangle.is_in(cords)
+
+
+class InfoPage:  # правила
+    def __init__(self, color=color_text, background=color_back):
+        self.background = background
+        self.exit_button = ExitButton()
+        self.color = color
+
+    def draw(self):
+        screen.fill(self.background)
+        my_font = pygame.font.SysFont("arial", width // 20)
+        text_surface = my_font.render("Пройди лабиринт или создай свой", False, self.color)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (width // 2, height // 2)
+        screen.blit(text_surface, text_rect)
+        self.exit_button.draw()
+
+    def click(self, cords):
+        if self.exit_button.clicked(cords):
+            return "Pause"
+        return ""
+
+    @staticmethod
+    def button_pressed(pressed_data: dict):
+        del pressed_data
+        return ""
+
+    def update(self):
+        self.exit_button.rectangle.update()
+
+
+class Privet:
+    def __init__(self, color=color_text, background=color_back):
+        self.background = background
+        self.exit_button = ExitButton()
+        self.color = color
+        self.cords = (width // 2, height // 2)
+        self.outline = 4
+
+    def draw(self):
+        screen.fill(self.background)
+
+        my_font = pygame.font.SysFont("arial", height // 100 * 8)
+        text_surface = my_font.render("Hello world!", False, self.color)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (width // 2, height // 10 * 3)
+        screen.blit(text_surface, text_rect)
+
+        self.exit_button.draw()
+
+    def click(self, cords):
+        if self.exit_button.clicked(cords):
+            return "Pause"
+        return ""
+
+    @staticmethod
+    def button_pressed(pressed_data: dict):
+        del pressed_data
+        return ""
+
+    def update(self):
+        self.exit_button.rectangle.update()
+
+
+class RestartPage:
+    def __init__(self, color=color_text, background=color_back):
+        self.color = color
+        self.exit_button = ExitButton()
+        self.background = background
+        self.width = width // 7
+        self.height = height // 7
+        self.x = self.y = 0
+        self.count = 0
+        self.limit = 5
+        self.text = None
+        self.new_cords()
+
+    def new_cords(self):
+        self.x = randint(0, width - self.width)
+        self.y = randint(self.exit_button.y + self.exit_button.height, height - self.height)
+
+    def draw(self):
+        screen.fill(self.background)
+        self.exit_button.draw()
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+        my_font = pygame.font.SysFont("arial", int(self.height * 0.2))
+        text = f"Нажать {self.count}/{self.limit}" if self.text is None else self.text
+        text_surface = my_font.render(text, False, self.background)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (self.x + self.width // 2, self.y + self.height // 2)
+        screen.blit(text_surface, text_rect)
+
+    def update(self):
+        self.text = None
+        self.count = 0
+        self.exit_button.rectangle.update()
+
+    def click(self, cords):
+        if self.exit_button.clicked(cords):
+            return "Pause"
+        elif self.x <= cords[0] <= self.x + self.width and self.y <= cords[1] <= self.y + self.height:
+            self.count += 1
+            if self.count >= self.limit:
+                self.count = 0
+                new_game()
+                self.text = "Выполнено!"
+            self.new_cords()
+        return ""
+
+    @staticmethod
+    def button_pressed(pressed_data: dict):
+        del pressed_data
+        return ""
+
+
+class GamePage:
+    def __init__(self, background=color_back):
+        self.background = background
+        self.alpha = 2
+        self.x_numb = 3
+        self.y_numb = 2
+        self.this_games = []
+
+    def new_game(self):
+        x_numb = self.x_numb
+        y_numb = self.y_numb
+        for x in range(x_numb):
+            for y in range(y_numb):
+                if x == x_numb // 2 and y == 0:
+                    continue
+                game = choice(games).copy()
+                if x == 0:
+                    game_x = int(width // x_numb * x + width // 100 * (self.alpha / 1))
+                    game_width = int(width // x_numb * (1 + x) - width // 100 * (self.alpha / 2) - game_x)
+                elif x + 1 == x_numb:
+                    game_x = int(width // x_numb * x + width // 100 * (self.alpha / 2))
+                    game_width = int(width // x_numb * (1 + x) - width // 100 * (self.alpha / 1) - game_x)
+                else:
+                    game_x = int(width // x_numb * x + width // 100 * (self.alpha / 2))
+                    game_width = int(width // x_numb * (1 + x) - width // 100 * (self.alpha / 2) - game_x)
+                if y == 0:
+                    game_y = int(height // y_numb * y + height // 100 * (self.alpha / 1))
+                    game_height = int(height // y_numb * (1 + y) - height // 100 * (self.alpha / 2) - game_y)
+                elif y + 1 == y_numb:
+                    game_y = int(height // y_numb * y + height // 100 * (self.alpha / 2))
+                    game_height = int(height // y_numb * (1 + y) - height // 100 * (self.alpha / 1) - game_y)
+                else:
+                    game_y = int(height // y_numb * y + height // 100 * (self.alpha / 2))
+                    game_height = int(height // y_numb * (1 + y) - height // 100 * (self.alpha / 2) - game_y)
+                game.init(game_x, game_y, game_width, game_height)
+                self.this_games.append(game)
+
+    def draw(self):
+        screen.fill(self.background)
+        self.this_games[3].draw()
+
+        color = (255, 255, 255)
+        x1 = 200
+        y1 = 475
+        x2 = 25
+        y2 = 475
+        x3 = 25
+        y3 = 25
+        x4 = 475
+        y4 = 25
+        x5 = 475
+        y5 = 475
+        x6 = 275
+        y6 = 475
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4), (x5, y5), (x6, y6)], 1)
+
+        x1 = 175
+        y1 = 175
+        x2 = 275
+        y2 = 175
+        x3 = 275
+        y3 = 275
+        x4 = 200
+        y4 = 275
+        x5 = 200
+        y5 = 225
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4), (x5, y5)], 1)
+
+        x1 = 200
+        y1 = 250
+        x2 = 150
+        y2 = 250
+        x3 = 150
+        y3 = 125
+        x4 = 175
+        y4 = 125
+        x5 = 175
+        y5 = 100
+        x6 = 250
+        y6 = 100
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4), (x5, y5), (x6, y6)], 1)
+
+        x1 = 250
+        y1 = 100
+        x2 = 250
+        y2 = 125
+        x3 = 450
+        y3 = 125
+        x4 = 450
+        y4 = 250
+        x5 = 325
+        y5 = 250
+        x6 = 325
+        y6 = 325
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4), (x5, y5), (x6, y6)], 1)
+
+        x1 = 325
+        y1 = 325
+        x2 = 125
+        y2 = 325
+        x3 = 125
+        y3 = 75
+        x4 = 300
+        y4 = 75
+        x5 = 300
+        y5 = 100
+        x6 = 475
+        y6 = 100
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4), (x5, y5), (x6, y6)], 1)
+
+        x1 = 125
+        y1 = 175
+        x2 = 75
+        y2 = 175
+        x3 = 75
+        y3 = 350
+        x4 = 125
+        y4 = 350
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4)], 1)
+
+        x1 = 150
+        y1 = 325
+        x2 = 150
+        y2 = 375
+        x3 = 75
+        y3 = 375
+        x4 = 75
+        y4 = 400
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4)], 1)
+
+        x1 = 275
+        y1 = 225
+        x2 = 350
+        y2 = 225
+        x3 = 350
+        y3 = 150
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3)], 1)
+
+        x1 = 275
+        y1 = 200
+        x2 = 300
+        y2 = 200
+        x3 = 300
+        y3 = 150
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3)], 1)
+
+        x1 = 400
+        y1 = 275
+        x2 = 400
+        y2 = 375
+        x3 = 475
+        y3 = 375
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3)], 1)
+
+        x3 = 325
+        y3 = 375
+        x4 = 275
+        y4 = 375
+        x5 = 275
+        y5 = 475
+        x1 = 375
+        y1 = 425
+        x2 = 325
+        y2 = 425
+        pygame.draw.lines(screen, color, False, [(x1, y1), (x2, y2), (x3, y3), (x4, y4), (x5, y5)], 1)
+
+        x1 = 25
+        y1 = 125
+        x2 = 75
+        y2 = 125
+        pygame.draw.line(screen, color, (x1, y1), (x2, y2), 1)
+
+        x1 = 75
+        y1 = 75
+        x2 = 125
+        y2 = 75
+        pygame.draw.line(screen, color, (x1, y1), (x2, y2), 1)
+
+        x1 = 125
+        y1 = 425
+        x2 = 125
+        y2 = 475
+        pygame.draw.line(screen, color, (x1, y1), (x2, y2), 1)
+
+        x1 = 200
+        y1 = 100
+        x2 = 200
+        y2 = 150
+        pygame.draw.line(screen, color, (x1, y1), (x2, y2), 1)
+
+    def click(self, cords):
+        for game in self.this_games:
+            game.click(cords)
+        return ""
+
+    def button_pressed(self, pressed_data: dict):
+        if pressed_data[pygame.K_ESCAPE]:
+            return "Pause"
+        return ""
+
+    def update(self):
+        self.new_game()
+
+
+
+k = []
+
+
+class MainMenu:
+    def __init__(self, color=color_text, background=color_back):
+        self.color = color
+        self.background = background
+        self.average_height = height // 10
+        self.average_width = width // 100 * 30
+        self.outline = 4
+        self.top_space = height // 5
+        self.buttons = [["Играть"],
+                        ["Привет)"],
+                        ["Перезагрузись"],
+                        ["Правила"],
+                        ["Exit"]]
+        x = width // 2 - self.average_width // 2
+        y = ((height - 2 * self.top_space - self.average_height - 2 * self.outline) //
+             (len(self.buttons) - 1) * 0.5 + 2 * self.top_space - self.average_height // 3)
+        self.buttons[0] = [self.buttons[0][0], Rectangle(self.color, [x, y,
+                                                                      self.average_width,
+                                                                      self.average_height],
+                                                         self.outline)]
+        x = width // 2 + self.average_width // 1.5
+        y = ((height - 2 * self.top_space - self.average_height - 2 * self.outline) //
+             (len(self.buttons) - 1) * -0.5 + 2 * self.top_space - self.average_height // 3)
+        self.buttons[1] = [self.buttons[1][0], Rectangle(self.color, [x, y,
+                                                                      self.average_width,
+                                                                      self.average_height],
+                                                         self.outline)]
+        x = width // 2 - self.average_width * 1.65
+        y = ((height - 2 * self.top_space - self.average_height - 2 * self.outline) //
+             (len(self.buttons) - 1) * 4 + 2 * self.top_space - self.average_height // 3)
+        self.buttons[2] = [self.buttons[2][0], Rectangle(self.color, [x, y,
+                                                                      self.average_width,
+                                                                      self.average_height],
+                                                         self.outline)]
+        x = width // 2 - self.average_width * 1.65
+        y = ((height - 2 * self.top_space - self.average_height - 2 * self.outline) //
+             (len(self.buttons) - 1) * -0.5 + 2 * self.top_space - self.average_height // 3)
+        self.buttons[3] = [self.buttons[3][0], Rectangle(self.color, [x, y,
+                                                                      self.average_width,
+                                                                      self.average_height],
+                                                         self.outline)]
+        x = width // 2 - self.average_width // 2
+        y = ((height - 2 * self.top_space - self.average_height - 2 * self.outline) //
+             (len(self.buttons) - 1) * 4 + 2 * self.top_space - self.average_height // 3)
+        self.buttons[4] = [self.buttons[4][0], Rectangle(self.color, [x, y,
+                                                                      self.average_width,
+                                                                      self.average_height],
+                                                         self.outline)]
+        x = width // 2
+        y = ((height - 2 * self.top_space - self.average_height - 2 * self.outline) //
+             (len(self.buttons) - 1) * 3 + 2 * self.top_space - self.average_height // 3)
+        k.append((x, y))
+
+    def draw(self):
+        screen.fill(self.background)
+        my_font = pygame.font.SysFont("arial", int(self.top_space * 0.7))
+        text_surface = my_font.render("Kvody's maze", False, self.color)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (width // 2, self.top_space)
+        screen.blit(text_surface, text_rect)
+        my_font = pygame.font.SysFont("arial", int(self.average_height * 0.65))
+        for text, rect in self.buttons:
+            rect.draw()
+            text_surface = my_font.render(text, False, self.color)
+            text_rect = text_surface.get_rect()
+            text_rect.center = (rect.data[0] + self.average_width // 2, rect.data[1] + self.average_height // 2)
+            screen.blit(text_surface, text_rect)
+
+    @staticmethod
+    def button_pressed(pressed_data: dict):
+        del pressed_data
+        return ""
+
+    def click(self, cords) -> str:
+        for text, rect in self.buttons:
+            if rect.clicked(cords):
+                return text
+        return ""
+
+    def is_in(self, cords):
+        for text, rect in self.buttons:
+            rect.is_in(cords)
+
+    def update(self):
+        for text, rect in self.buttons:
+            rect.update()
+
+
+class PagesStructure:
+    def __init__(self):
+        self.game_page = GamePage()
+        self.main_menu = MainMenu()
+        self.info_page = InfoPage()
+        self.restart_page = RestartPage()
+        self.privet = Privet()
+        self.this_page = self.main_menu
+
+    def buttons_clicked(self, info):
+        action = self.this_page.button_pressed(info)
+        if type(self.this_page) == GamePage:
+            if action == "Pause":
+                self.this_page = self.main_menu
+        elif type(self.this_page) == MainMenu:
+            if action == "Exit":
+                global running
+                running = False
+
+    def click(self, cords):
+        action = self.this_page.click(cords)
+        if type(self.this_page) == MainMenu:
+            if action == "Exit":
+                global running
+                running = False
+            elif action == "Играть":
+                self.this_page = self.game_page
+                self.this_page.update()
+            elif action == "Правила":
+                self.this_page = self.info_page
+                self.this_page.update()
+            elif action == "Привет)":
+                self.this_page = self.privet
+                self.this_page.update()
+            elif action == "Перезагрузись":
+                self.this_page = self.restart_page
+                self.this_page.update()
+        elif type(self.this_page) == GamePage:
+            if action == "Pause":
+                self.this_page = self.main_menu
+                self.this_page.update()
+        elif type(self.this_page) == InfoPage:
+            if action == "Pause":
+                self.this_page = self.main_menu
+                self.this_page.update()
+        elif type(self.this_page) == RestartPage:
+            if action == "Pause":
+                self.this_page = self.main_menu
+                self.this_page.update()
+        elif type(self.this_page) == Privet:
+            if action == "Pause":
+                self.this_page = self.main_menu
+                self.this_page.update()
+
+    def draw(self):
+        self.this_page.draw()
+
+    def mouse_in(self, cords):
+        if type(self.this_page) not in [MainMenu, GamePage]:
+            self.this_page.exit_button.is_in(cords)
+        elif type(self.this_page) == MainMenu:
+            self.this_page.is_in(cords)
+
+
+class MouseClicksChecker:
+    def __init__(self, state=False):
+        self.state = state
+
+    def condition(self, info):
+        if type(done.this_page) == Privet:
+            return info
+        if info and self.state:
+            return not self.state
+        elif not info and not self.state:
+            return self.state
+        self.state = not self.state
+        return self.state
+
+
+class KeyboardClicksChecker:
+    def __init__(self):
+        self.conditions = {}
+
+    def get_state(self, state, name):
+        if state and self.conditions.get(name, False):
+            return False
+        elif not state and not self.conditions.get(name, False):
+            return False
+        self.conditions[name] = not self.conditions.get(name, False)
+        return self.conditions[name]
+
+
+def check(x, y):
+    f = screen.get_at((x, y))
+    if f[0] == 255 and f[1] == 255 and f[2] == 255:
+        return False
+    return True
+
+
+done = PagesStructure()
+click = MouseClicksChecker()
+keyboard = KeyboardClicksChecker()
+
+pages_speed_info = FPScounter()
+all_sprites = pygame.sprite.Group()
+clock = pygame.time.Clock()
+x1, y1 = k[0]
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    pressed = pygame.key.get_pressed()
+    done.buttons_clicked(pressed)
+
+    left, middle, right = pygame.mouse.get_pressed()
+    mouse_cords = pygame.mouse.get_pos()
+    if click.condition(left):
+        done.click(mouse_cords)
+    done.mouse_in(mouse_cords)
+    done.draw()
+
+    if pressed[pygame.K_F12]:
+        pages_speed_info.draw()
+
+    pov1 = pygame.Surface((18, 18))
+    pov1.fill((10, 0, 0))
+    screen.blit(pov1, (x1, y1))
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_RIGHT] and 0 <= x1 < width and check(x1 + 5, y1):
+        x1 += 5
+    elif keys[pygame.K_LEFT] and check(x1 - 5, y1):
+        x1 -= 5
+    elif keys[pygame.K_DOWN] and check(x1, y1 + 5):
+        y1 += 5
+    elif keys[pygame.K_UP] and 0 < y1 < height and check(x1, y1 - 5):
+        y1 -= 5
+    elif keys[pygame.K_UP] or keys[pygame.K_DOWN] or keys[pygame.K_RIGHT] or keys[pygame.K_LEFT]:
+        x1, y1 = k[0]
+
+    x = random.randint(0, width)
+    y = random.randint(0, height)
+    create_particles((x, y))
+
+    all_sprites.update()
+    all_sprites.draw(screen)
+    pygame.display.flip()
+    clock.tick(10)
+
+f = open("store.pckl", "wb")
+dump(fps, f)
+f.close()
